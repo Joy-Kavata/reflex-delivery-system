@@ -1,0 +1,33 @@
+{
+  "name": "reflex-delivery-system",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "prisma skills sync || exit 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Joy-Kavata/reflex-delivery-system.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Joy-Kavata/reflex-delivery-system/issues"
+  },
+  "homepage": "https://github.com/Joy-Kavata/reflex-delivery-system#readme",
+  "dependencies": {
+    "@prisma/client": "^7.10.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "pg": "^8.23.0",
+    "prisma": "^8.0.0-rc.12"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
