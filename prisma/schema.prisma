@@ -1,0 +1,58 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  RETAILER
+  DISPATCHER
+  RIDER
+}
+
+enum Status {
+  REQUESTED
+  ASSIGNED
+  PICKED_UP
+  DELIVERED
+  CONFIRMED
+}
+
+model User {
+  id         String        @id @default(uuid())
+  name       String
+  phone      String
+  role       Role
+  deliveries Delivery[]    @relation("RetailerDeliveries")
+  assigned   Delivery[]    @relation("RiderDeliveries")
+  logs       DeliveryLog[]
+}
+
+model Delivery {
+  id                String        @id @default(uuid())
+  retailer_id       String
+  retailer          User          @relation("RetailerDeliveries", fields: [retailer_id], references: [id])
+  assigned_rider_id String?
+  assigned_rider    User?         @relation("RiderDeliveries", fields: [assigned_rider_id], references: [id])
+  customer_name     String
+  customer_phone    String
+  delivery_address  String
+  item_description  String
+  status            Status        @default(REQUESTED)
+  created_at        DateTime      @default(now())
+  logs              DeliveryLog[]
+}
+
+model DeliveryLog {
+  id                 String   @id @default(uuid())
+  delivery_id        String
+  delivery           Delivery @relation(fields: [delivery_id], references: [id])
+  previous_status    Status
+  new_status         Status
+  updated_by_user_id String
+  updated_by         User     @relation(fields: [updated_by_user_id], references: [id])
+  timestamp          DateTime @default(now())
+}
