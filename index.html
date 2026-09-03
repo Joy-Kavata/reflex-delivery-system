@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reflex Delivery System - Dashboard</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --border: #334155;
+      --success: #22c55e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 2rem; }
+    header { margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+    h1 { font-size: 1.75rem; font-weight: 700; color: var(--text); }
+    p.subtitle { color: var(--muted); font-size: 0.9rem; margin-top: 0.25rem; }
+    .grid { display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; }
+    .card h2 { font-size: 1.2rem; color: #38bdf8; }
+    .form-group { margin-bottom: 1rem; }
+    label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.4rem; }
+    input { width: 100%; padding: 0.6rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.9rem; }
+    input:focus { outline: none; border-color: var(--accent); }
+    button { width: 100%; padding: 0.75rem; background: var(--accent); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+    button:hover { background: var(--accent-hover); }
+    .delivery-item { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .delivery-header { display: flex; justify-content: space-between; align-items: center; }
+    .badge { background: #0284c7; color: white; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+    .badge.assigned { background: #d97706; }
+    .badge.delivered { background: var(--success); }
+    .actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+    .btn-action { padding: 0.4rem 0.8rem; font-size: 0.8rem; border-radius: 4px; }
+    .btn-assign { background: #d97706; }
+    .btn-complete { background: var(--success); }
+    .status-box { margin-top: 0.5rem; font-size: 0.85rem; padding: 0.5rem; border-radius: 4px; display: none; }
+    .status-box.active { display: block; background: #162e21; color: var(--success); border: 1px solid #22c55e44; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Reflex Delivery System</h1>
+    <p class="subtitle">Live Management Dashboard | API Connected</p>
+  </header>
+
+  <div class="grid">
+    <!-- Panel 1: Create Delivery -->
+    <div class="card">
+      <h2>Create New Delivery</h2>
+      <form id="create-form" style="margin-top: 1rem;">
+        <div class="form-group">
+          <label>Retailer ID</label>
+          <input type="text" id="retailer_id" value="5b6c7b70-a0e9-4102-b747-00568312db74" required />
+        </div>
+        <div class="form-group">
+          <label>Customer Name</label>
+          <input type="text" id="customer_name" placeholder="e.g. Jane Doe" required />
+        </div>
+        <div class="form-group">
+          <label>Customer Phone</label>
+          <input type="text" id="customer_phone" placeholder="e.g. 0712345678" required />
+        </div>
+        <div class="form-group">
+          <label>Delivery Address</label>
+          <input type="text" id="delivery_address" placeholder="e.g. Westlands, Nairobi" required />
+        </div>
+        <div class="form-group">
+          <label>Item Description</label>
+          <input type="text" id="item_description" placeholder="e.g. Laptop Charger" required />
+        </div>
+        <button type="submit">Create Order</button>
+      </form>
+      <div id="form-status" class="status-box"></div>
+    </div>
+
+    <!-- Panel 2: Deliveries Board -->
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2>Deliveries Board</h2>
+        <div style="display: flex; gap: 0.5rem;">
+          <button onclick="toggleView('pending')" id="btn-view-pending" style="width: auto; padding: 0.4rem 0.8rem; font-size: 0.8rem; background: var(--accent);">Pending Rider</button>
+          <button onclick="toggleView('transit')" id="btn-view-transit" style="width: auto; padding: 0.4rem 0.8rem; font-size: 0.8rem; background: var(--border);">In Transit</button>
+          <button onclick="toggleView('cleared')" id="btn-view-cleared" style="width: auto; padding: 0.4rem 0.8rem; font-size: 0.8rem; background: var(--border);">Cleared</button>
+          <button onclick="fetchDeliveries()" style="width: auto; padding: 0.4rem 0.8rem; font-size: 0.8rem;">Refresh</button>
+        </div>
+      </div>
+      <div id="deliveries-list">Loading deliveries...</div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "https://reflex-delivery-system-chi.vercel.app/api/v1";
+    let currentView = "pending";
+
+    function toggleView(view) {
+      currentView = view;
+      document.getElementById("btn-view-pending").style.background = view === "pending" ? "var(--accent)" : "var(--border)";
+      document.getElementById("btn-view-transit").style.background = view === "transit" ? "var(--accent)" : "var(--border)";
+      document.getElementById("btn-view-cleared").style.background = view === "cleared" ? "var(--accent)" : "var(--border)";
+      fetchDeliveries();
+    }
+
+    // Create Delivery Request
+    document.getElementById("create-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const statusBox = document.getElementById("form-status");
+      statusBox.className = "status-box";
+      statusBox.textContent = "Submitting order...";
+
+      const payload = {
+        retailer_id: document.getElementById("retailer_id").value,
+        customer_name: document.getElementById("customer_name").value,
+        customer_phone: document.getElementById("customer_phone").value,
+        delivery_address: document.getElementById("delivery_address").value,
+        item_description: document.getElementById("item_description").value,
+      };
+
+      try {
+        const res = await fetch(`${API_BASE}/deliveries`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          statusBox.textContent = `Order Created Successfully! ID: ${data.data.id}`;
+          statusBox.classList.add("active");
+          document.getElementById("create-form").reset();
+          fetchDeliveries();
+        } else {
+          statusBox.textContent = `Error: ${data.error || "Failed to create order"}`;
+          statusBox.classList.add("active");
+        }
+      } catch (err) {
+        statusBox.textContent = "Connection error to API backend.";
+        statusBox.classList.add("active");
+      }
+    });
+
+    // Fetch Deliveries
+    async function fetchDeliveries() {
+      const container = document.getElementById("deliveries-list");
+      container.innerHTML = "Fetching orders...";
+
+      try {
+        const res = await fetch(`${API_BASE}/deliveries/open`);
+        const data = await res.json();
+
+        if (res.ok && data.data && data.data.length > 0) {
+          let items = data.data;
+
+          if (currentView === "pending") {
+            items = items.filter(item => item.status === "REQUESTED");
+          } else if (currentView === "transit") {
+            items = items.filter(item => item.status === "IN_TRANSIT" || item.status === "ASSIGNED" || item.status === "PICKED_UP");
+          } else if (currentView === "cleared") {
+            items = items.filter(item => item.status === "DELIVERED" || item.status === "CONFIRMED");
+          }
+
+          if (items.length === 0) {
+            container.innerHTML = `<p style='color: var(--muted);'>No ${currentView} deliveries found.</p>`;
+            return;
+          }
+
+          container.innerHTML = items.map(item => `
+            <div class="delivery-item">
+              <div class="delivery-header">
+                <strong>${item.item_description}</strong>
+                <span class="badge ${item.status === 'DELIVERED' || item.status === 'CONFIRMED' ? 'delivered' : item.status === 'IN_TRANSIT' || item.status === 'ASSIGNED' ? 'assigned' : ''}">${item.status}</span>
+              </div>
+              <div style="font-size: 0.85rem; color: var(--muted);">
+                <p><strong>Customer:</strong> ${item.customer_name} (${item.customer_phone})</p>
+                <p><strong>Address:</strong> ${item.delivery_address}</p>
+                <p><strong>Rider ID:</strong> ${item.assigned_rider_id ? item.assigned_rider_id : '<em>Unassigned</em>'}</p>
+                <p style="font-size: 0.75rem; margin-top: 0.2rem; color: #64748b;"><strong>ID:</strong> ${item.id}</p>
+              </div>
+              <div class="actions">
+                ${item.status === 'REQUESTED' ? `<button class="btn-action btn-assign" onclick="assignRider('${item.id}')">Assign Default Rider</button>` : ''}
+                ${(item.status === 'IN_TRANSIT' || item.status === 'ASSIGNED' || item.status === 'PICKED_UP') ? `<button class="btn-action btn-complete" onclick="markDelivered('${item.id}')">Mark Delivered</button>` : ''}
+              </div>
+            </div>
+          `).join("");
+        } else {
+          container.innerHTML = `<p style='color: var(--muted);'>No active deliveries found.</p>`;
+        }
+      } catch (err) {
+        container.innerHTML = "<p style='color: #ef4444;'>Failed to load deliveries from API.</p>";
+      }
+    }
+
+    // Assign Rider Action
+    async function assignRider(id) {
+      try {
+        const res = await fetch(`${API_BASE}/deliveries/${id}/assign`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ assigned_rider_id: "5b6c7b70-a0e9-4102-b747-00568312db74" })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          fetchDeliveries();
+        } else {
+          alert(`Assign failed: ${data.error || 'Server error'}`);
+        }
+      } catch (err) { 
+        alert("Failed to assign rider"); 
+      }
+    }
+
+    // Mark Delivered Action
+    async function markDelivered(id) {
+      try {
+        const res = await fetch(`${API_BASE}/deliveries/${id}/status`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            new_status: "DELIVERED",
+            updated_by_user_id: "5b6c7b70-a0e9-4102-b747-00568312db74"
+          })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          fetchDeliveries();
+        } else {
+          alert(`Update failed: ${data.error || 'Server error'}`);
+        }
+      } catch (err) { 
+        alert("Failed to update status"); 
+      }
+    }
+
+    // Initial Load
+    fetchDeliveries();
+  </script>
+</body>
+</html>
