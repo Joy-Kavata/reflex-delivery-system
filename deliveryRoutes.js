@@ -7,9 +7,10 @@ const {
   updateStatus
 } = require('./deliveryController');
 
-router.post('/deliveries', createDelivery);
-router.get('/deliveries/open', getOpenDeliveries);
-router.patch('/deliveries/:id/assign', assignRider);
-router.patch('/deliveries/:id/status', updateStatus);
+// Clean route paths assuming app.use('/api/v1/deliveries', deliveryRoutes) in server.js
+router.post('/', createDelivery);
+router.get('/open', getOpenDeliveries);
+router.patch('/:id/assign', assignRider);
+router.patch('/:id/status', updateStatus);
 
 module.exports = router;
