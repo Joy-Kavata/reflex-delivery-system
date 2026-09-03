@@ -10,6 +10,6 @@ const doc = {
 };
 
 const outputFile = './swagger-output.json';
-const routes = ['./server.js', './deliveryRoutes.js'];
+const routes = ['./server.js']; // Points strictly to server.js to prevent duplicate route listings
 
-swaggerAutogen(outputFile, routes);
+swaggerAutogen(outputFile, doc, routes);
