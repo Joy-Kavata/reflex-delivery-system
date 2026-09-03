@@ -10,6 +10,7 @@ const doc = {
 };
 
 const outputFile = './swagger-output.json';
-const routes = ['./server.js']; // Points strictly to server.js to prevent duplicate route listings
+// Point directly to deliveryRoutes.js where your Express endpoints are defined
+const routes = ['./deliveryRoutes.js'];
 
-swaggerAutogen(outputFile, doc, routes);
+swaggerAutogen(outputFile, routes, doc);
