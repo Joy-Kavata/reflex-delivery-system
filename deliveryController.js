@@ -1,4 +1,4 @@
-const prisma = require('../config/db');
+const prisma = require('./db');
 
 // 1. POST /api/v1/deliveries (Retailer logs a new delivery request)
 const createDelivery = async (req, res) => {

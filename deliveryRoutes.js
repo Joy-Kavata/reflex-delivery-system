@@ -5,7 +5,7 @@ const {
   getOpenDeliveries,
   assignRider,
   updateStatus
-} = require('../controllers/deliveryController');
+} = require('./deliveryController');
 
 router.post('/deliveries', createDelivery);
 router.get('/deliveries/open', getOpenDeliveries);
