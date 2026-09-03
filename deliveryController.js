@@ -28,15 +28,15 @@ const getOpenDeliveries = async (req, res) => {
     const deliveries = await prisma.delivery.findMany({
       where: {
         status: {
-          in: ['REQUESTED', 'ASSIGNED', 'IN_TRANSIT', 'PICKED_UP']
+          in: ['REQUESTED', 'ASSIGNED', 'IN_TRANSIT', 'PICKED_UP', 'DELIVERED', 'CONFIRMED']
         }
       },
-      include: { retailer: true },
       orderBy: { created_at: 'desc' }
     });
 
     res.status(200).json({ success: true, data: deliveries });
   } catch (error) {
+    console.error("GET /deliveries/open Error:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 };
@@ -45,7 +45,6 @@ const getOpenDeliveries = async (req, res) => {
 const assignRider = async (req, res) => {
   try {
     const { id } = req.params;
-    // Ensure assigned_rider_id defaults to valid rider ID if missing or null in request body
     const assigned_rider_id = req.body && req.body.assigned_rider_id 
       ? req.body.assigned_rider_id 
       : "5b6c7b70-a0e9-4102-b747-00568312db74";
@@ -76,7 +75,6 @@ const updateStatus = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Delivery not found' });
     }
 
-    // Atomic update and log insertion using Prisma Transaction
     const [updatedDelivery] = await prisma.$transaction([
       prisma.delivery.update({
         where: { id },
