@@ -6,11 +6,11 @@ const doc = {
     description: 'Interactive API documentation for delivery management',
   },
   host: 'reflex-delivery-system-chi.vercel.app',
+  basePath: '/api/v1',
   schemes: ['https'],
 };
 
 const outputFile = './swagger-output.json';
-// Point directly to deliveryRoutes.js where your Express endpoints are defined
 const routes = ['./deliveryRoutes.js'];
 
 swaggerAutogen(outputFile, routes, doc);
